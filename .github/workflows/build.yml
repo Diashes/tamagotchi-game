@@ -18,7 +18,5 @@ jobs:
         npm run build -- --public-url /tamagotchi-game/
     - name: Deploy site to gh-pages branch
       uses: crazy-max/ghaction-github-pages@v1.4.0
-      env:
-        GITHUB_PAT: ${{ secrets.PAT }}
       with:
         build_dir: dist
