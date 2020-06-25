@@ -8,6 +8,7 @@ import {
     getNextDieTime,
     STATES,
     getNextPoopTime,
+    ICONS,
 } from "./constants";
 
 export function Game() {
@@ -40,6 +41,15 @@ export function Game() {
         }
     };
 
+    this.wake = () => {
+        (this.currentState = STATES.IDLING), (this.wakeTime = -1);
+        this.scene = Math.random() > RAIN_CHANCE ? 0 : 1;
+        modScene(SCENES[this.scene]);
+        this.determineFoxState();
+        this.hungryTime = getNextHungerTime(this.clock);
+        this.sleepTime = this.clock + DAY_LENGTH;
+    };
+
     this.poop = () => {
         this.currentState = STATES.POOPING;
         this.poopTime = -1;
@@ -49,7 +59,7 @@ export function Game() {
 
     this.startCelebrating = () => {
         this.currentState = STATES.CELEBRATING;
-        modFox("celebrate");
+        modFox(STATES.CELEBRATING);
         this.timeToStartCelebrating = -1;
         this.timeToEndCelebrating = this.clock + 2;
     };
@@ -63,25 +73,19 @@ export function Game() {
 
     this.determineFoxState = () => {
         if (this.currentState === STATES.IDLING) {
-            if (SCENES[this.scene] === "rain") modFox("rain");
-            else modFox(STATES.IDLING);
+            if (SCENES[this.scene] === STATES.RAIN) {
+                modFox(STATES.RAIN);
+            } else {
+                modFox(STATES.IDLING);
+            }
         }
     };
 
     this.startGame = () => {
         this.currentState = STATES.HATCHING;
         this.wakeTime = this.clock + 2;
-        modFox("egg");
-        modScene("day");
-    };
-
-    this.wake = () => {
-        (this.currentState = STATES.IDLING), (this.wakeTime = -1);
-        this.scene = Math.random() > RAIN_CHANCE ? 0 : 1;
-        modScene(SCENES[this.scene]);
-        this.determineFoxState();
-        this.hungryTime = getNextHungerTime(this.clock);
-        this.sleepTime = this.clock + DAY_LENGTH;
+        modFox(STATES.EGG);
+        modScene(STATES.DAY);
     };
 
     this.changeWeather = () => {
@@ -100,12 +104,13 @@ export function Game() {
     };
 
     this.feed = () => {
-        if (this.currentState !== STATES.HUNGRY) return;
-        this.currentState = STATES.FEEDING;
-        this.dieTime = -1;
-        this.poopTime = getNextPoopTime(this.clock);
-        modFox("eating");
-        this.timeToStartCelebrating = this.clock + 2;
+        if (this.currentState === STATES.HUNGRY) {
+            this.currentState = STATES.FEEDING;
+            this.dieTime = -1;
+            this.poopTime = getNextPoopTime(this.clock);
+            modFox(STATES.EATING);
+            this.timeToStartCelebrating = this.clock + 2;
+        }
     };
 
     this.getHungry = () => {
@@ -129,23 +134,26 @@ export function Game() {
             STATES.CELEBRATING,
             STATES.HATCHING,
         ];
-        const replayableStates = [STATES.INIT, STATES.DEAD];
         if (blockingStates.includes(this.currentState)) {
             return;
         }
-        if (replayableStates.includes(this.currentState)) {
+        if (this.currentState === STATES.INIT) {
             this.startGame();
             return;
         }
-        if (icon === "weather") {
+        if (this.currentState === STATES.DEAD) {
+            this.startGame();
+            return;
+        }
+        if (icon === ICONS.WEATHER) {
             this.changeWeather();
             return;
         }
-        if (icon === "poop") {
+        if (icon === ICONS.POOP) {
             this.cleanUpPoop();
             return;
         }
-        if (icon === "fish") {
+        if (icon === ICONS.FISH) {
             this.feed();
             return;
         }
@@ -154,7 +162,7 @@ export function Game() {
     this.sleep = () => {
         this.currentState = STATES.SLEEP;
         modFox(STATES.SLEEP);
-        modScene("night");
+        modScene(STATES.NIGHT);
         this.clearTimes();
         this.wakeTime = this.clock + NIGHT_LENGTH;
     };

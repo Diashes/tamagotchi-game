@@ -1,21 +1,49 @@
 import { Game } from "./game";
-import { TICK_RATE } from "./constants";
-import initButtons from "./buttons";
+import { TICK_RATE, ICONS } from "./constants";
 
-async function init() {
-    const game = new Game();
-    initButtons(game.handleUserAction);
-    console.log("Starting game");
-    let nextTimeToTick = Date.now();
-    function nextAnimationFrame() {
+const main = new Main();
+main.initButtons();
+requestAnimationFrame(main.nextAnimationFrame);
+
+function Main() {
+    this.game = new Game();
+    this.nextTimeToTick = Date.now();
+    this.selectedIcon = 0;
+
+    this.nextAnimationFrame = async () => {
         const now = Date.now();
-        if (nextTimeToTick <= now) {
-            game.tick();
-            nextTimeToTick = now + TICK_RATE;
+        if (this.nextTimeToTick <= now) {
+            this.game.tick();
+            this.nextTimeToTick = now + TICK_RATE;
         }
-        requestAnimationFrame(nextAnimationFrame);
-    }
-    requestAnimationFrame(nextAnimationFrame);
-}
+        requestAnimationFrame(this.nextAnimationFrame);
+    };
 
-init();
+    this.toggleHighlighted = (icon, show) => {
+        const className = `.${Object.values(ICONS)[icon]}-icon`;
+        const iconEl = document.querySelector(className);
+        iconEl.classList.toggle("highlighted", show);
+    };
+
+    this.initButtons = () => {
+        document
+            .querySelector(".buttons")
+            .addEventListener("click", this.buttonClick);
+    };
+
+    this.buttonClick = (event) => {
+        if (event.target.classList.contains("left-btn")) {
+            this.toggleHighlighted(this.selectedIcon, false);
+            this.selectedIcon =
+                (2 + this.selectedIcon) % Object.keys(ICONS).length;
+            this.toggleHighlighted(this.selectedIcon, true);
+        } else if (event.target.classList.contains("right-btn")) {
+            this.toggleHighlighted(this.selectedIcon, false);
+            this.selectedIcon =
+                (1 + this.selectedIcon) % Object.keys(ICONS).length;
+            this.toggleHighlighted(this.selectedIcon, true);
+        } else {
+            this.game.handleUserAction(Object.values(ICONS)[this.selectedIcon]);
+        }
+    };
+}
